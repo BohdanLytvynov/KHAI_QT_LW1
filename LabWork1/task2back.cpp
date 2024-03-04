@@ -2,7 +2,7 @@
 
 task2back::task2back(QObject *parent)
     : m_array(nullptr), m_mode(1), m_max(0), m_min(0), m_elementCount(0),
-    m_fail(false), m_arrayGenerated(false), QObject{parent}
+    m_fail(false), m_arrayGenerated(false), m_alloc(false), QObject{parent}
 {
     setMin("");
     setMax("");
@@ -12,10 +12,8 @@ task2back::task2back(QObject *parent)
 
 task2back::~task2back()
 {
-    if(m_array != nullptr)
-        delete[] m_array;
+    DeAllocate(m_array, m_alloc);
 }
-
 
 
 void task2back::ParseStringArray(QString strArray, double*& array,
@@ -28,12 +26,12 @@ void task2back::ParseStringArray(QString strArray, double*& array,
         auto begin = temp.begin();
         auto end = temp.end();
 
-        if(array != nullptr)
-            delete[] array;
-
         m_elementCount = temp.count();
 
-        array = new double[temp.count()];
+        DeAllocate(array, m_alloc);
+
+        Allocate(array, m_elementCount, m_alloc);
+
         int i = 0;
         while(begin != end)
         {
@@ -49,15 +47,13 @@ void task2back::ParseStringArray(QString strArray, double*& array,
     }
     catch(std::runtime_error& er)
     {
-        if(array != nullptr)
-            delete[] array;
+        DeAllocate(array, m_alloc);
 
         error = er.what();
     }
     catch (...)//catch all possible exceptions
     {
-        if(array != nullptr)
-            delete[] array;
+        DeAllocate(array, m_alloc);
 
         error = "Error while parsing Array!";
     }
@@ -121,7 +117,7 @@ void task2back::calculate()
 
     QString result;
 
-    if(m_array != nullptr && !m_fail)
+    if(m_alloc && !m_fail)
     {
         //1) Sort array using quick sort
         sort_algorithms<double>::quickSort(m_array, 0, m_elementCount - 1);
@@ -149,12 +145,12 @@ void task2back::calculate()
                 ++currCount;
             }
         }
-    }
 
-    setCalcResult(result);
+        setCalcResult(result);
 
-    if(m_mode == 1)
-        setArrInputError("");//Reset Error signal
+        if(m_mode == 1)
+            setArrInputError("");//Reset Error signal
+    }   
 }
 
 //Generator definitions
@@ -232,12 +228,11 @@ void task2back::generateArray()
     using namespace std;
     try {
 
-        if(m_array != nullptr)
-            delete[] m_array;
+        DeAllocate(m_array, m_alloc);
 
         srand(std::time(nullptr));
 
-        m_array = new double[this->m_elementCount];
+        Allocate(m_array, this->m_elementCount, m_alloc);
 
         int range = m_max - m_min + 1;
 
@@ -258,8 +253,7 @@ void task2back::generateArray()
 
     } catch (...) {
 
-        if(m_array != nullptr)
-            delete[] m_array;
+        DeAllocate(m_array, m_alloc);
 
         setGenResult("Gen error!");
 
@@ -372,4 +366,36 @@ void task2back::setGenResult(const QString &newGenResult)
         return;
     m_genResult = newGenResult;
     emit genResultChanged();
+}
+
+template<class T>
+void task2back::Allocate(T *&array, std::size_t count, bool &isAllocated)
+{
+    if(isAllocated)
+        return;
+
+    try {
+        array = new T[count];
+        isAllocated = true;
+    }
+    catch(std::bad_alloc exp)
+    {
+        qDebug()<< exp.what();
+        isAllocated = false;
+    }
+    catch (...)
+    {
+        isAllocated = false;
+    }
+
+}
+
+template<class T>
+void task2back::DeAllocate(T *&array, bool &isAllocated)
+{
+    if(isAllocated)
+    {
+        delete[] array;
+        isAllocated = false;
+    }
 }

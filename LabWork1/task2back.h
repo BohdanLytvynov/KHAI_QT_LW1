@@ -92,6 +92,8 @@ signals:
 
 private:
     //State
+
+    bool m_alloc;//Indicates wether array is allocated
     double* m_array;//double pointer to the double array
     QString m_arrInputError;//Error that can happen while parsing the input array
 
@@ -118,6 +120,11 @@ private:
     bool ParseInt(const QString &value, int &output, std::string &error,
 std::function<void(int)> add_Condition = nullptr, int base = 10);
 
+    template<class T>
+    void Allocate(T*& array, std::size_t count, bool& isAllocated);
+
+    template<class T>
+    void DeAllocate(T*& array, bool& isAllocated);
 
 };
 

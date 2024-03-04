@@ -266,7 +266,7 @@ Window {
 
                 errorForeground: "red"
 
-                errorText: task2_back.arrInputError               
+                errorText: task2_back.arrInputError
             }
         }
 
@@ -432,7 +432,6 @@ Window {
             {
                 if(task2_back.mode == 1)
                     task2_back.setArray(arr_input.text)
-                //else if(task2_back.mode == 2)
 
                 task2_back.calculate()
             }
